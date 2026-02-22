@@ -1,0 +1,11 @@
+# 构建产物
+/dist/
+
+# 依赖
+/node_modules/
+
+# OS
+.DS_Store
+
+# 测试生成的目录
+/test-output/

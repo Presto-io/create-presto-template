@@ -1,0 +1,78 @@
+package main
+
+import (
+	"bufio"
+	_ "embed"
+	"fmt"
+	"os"
+	"strings"
+)
+
+//go:embed manifest.json
+var manifestJSON string
+
+//go:embed example.md
+var exampleMD string
+
+func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "--manifest":
+			fmt.Print(manifestJSON)
+			return
+		case "--example":
+			fmt.Print(exampleMD)
+			return
+		}
+	}
+
+	// 从 stdin 读取 Markdown
+	var input strings.Builder
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	for scanner.Scan() {
+		input.WriteString(scanner.Text())
+		input.WriteString("\n")
+	}
+
+	// TODO: 实现 Markdown → Typst 转换逻辑
+	// 请阅读 CONVENTIONS.md 了解详细的开发流程
+	output := convert(input.String())
+	fmt.Print(output)
+}
+
+func convert(markdown string) string {
+	// 占位实现：直接输出基本 Typst 文档
+	var out strings.Builder
+
+	out.WriteString("#set page(paper: \"a4\")\n")
+	out.WriteString("#set text(font: (\"SimSun\", \"Times New Roman\"), size: 12pt, lang: \"zh\")\n")
+	out.WriteString("#set par(leading: 1.5em, first-line-indent: 2em)\n\n")
+
+	// 简单地将 Markdown 内容作为 Typst 正文输出
+	lines := strings.Split(markdown, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			out.WriteString("\n")
+			continue
+		}
+		if strings.HasPrefix(trimmed, "---") {
+			continue
+		}
+		if strings.HasPrefix(trimmed, "# ") {
+			title := strings.TrimPrefix(trimmed, "# ")
+			out.WriteString(fmt.Sprintf("#heading(level: 1)[%s]\n", title))
+		} else if strings.HasPrefix(trimmed, "## ") {
+			title := strings.TrimPrefix(trimmed, "## ")
+			out.WriteString(fmt.Sprintf("#heading(level: 2)[%s]\n", title))
+		} else if strings.HasPrefix(trimmed, "### ") {
+			title := strings.TrimPrefix(trimmed, "### ")
+			out.WriteString(fmt.Sprintf("#heading(level: 3)[%s]\n", title))
+		} else {
+			out.WriteString(trimmed + "\n")
+		}
+	}
+
+	return out.String()
+}

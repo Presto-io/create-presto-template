@@ -1,0 +1,23 @@
+{
+  "name": "create-presto-template",
+  "version": "1.0.0",
+  "description": "Create a new Presto template project",
+  "bin": {
+    "create-presto-template": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "type": "module",
+  "scripts": {
+    "build": "tsc && cp -r src/templates dist/templates",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["presto", "template", "typst", "markdown", "scaffold"],
+  "license": "MIT"
+}

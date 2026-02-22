@@ -1,0 +1,64 @@
+use std::env;
+use std::io::{self, Read};
+
+const MANIFEST: &str = include_str!("../manifest.json");
+const EXAMPLE: &str = include_str!("../example.md");
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "--manifest" => {
+                print!("{}", MANIFEST);
+                return;
+            }
+            "--example" => {
+                print!("{}", EXAMPLE);
+                return;
+            }
+            _ => {}
+        }
+    }
+
+    // 从 stdin 读取 Markdown
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).expect("无法读取 stdin");
+
+    // TODO: 实现 Markdown → Typst 转换逻辑
+    // 请阅读 CONVENTIONS.md 了解详细的开发流程
+    let output = convert(&input);
+    print!("{}", output);
+}
+
+fn convert(markdown: &str) -> String {
+    let mut out = String::new();
+
+    out.push_str("#set page(paper: \"a4\")\n");
+    out.push_str("#set text(font: (\"SimSun\", \"Times New Roman\"), size: 12pt, lang: \"zh\")\n");
+    out.push_str("#set par(leading: 1.5em, first-line-indent: 2em)\n\n");
+
+    // 占位实现：简单地将 Markdown 内容映射为 Typst
+    for line in markdown.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            out.push('\n');
+            continue;
+        }
+        if trimmed.starts_with("---") {
+            continue;
+        }
+        if let Some(title) = trimmed.strip_prefix("# ") {
+            out.push_str(&format!("#heading(level: 1)[{}]\n", title));
+        } else if let Some(title) = trimmed.strip_prefix("## ") {
+            out.push_str(&format!("#heading(level: 2)[{}]\n", title));
+        } else if let Some(title) = trimmed.strip_prefix("### ") {
+            out.push_str(&format!("#heading(level: 3)[{}]\n", title));
+        } else {
+            out.push_str(trimmed);
+            out.push('\n');
+        }
+    }
+
+    out
+}

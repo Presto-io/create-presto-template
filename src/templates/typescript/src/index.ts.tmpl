@@ -1,0 +1,62 @@
+import { readFileSync } from 'node:fs';
+import { stdin } from 'node:process';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const manifest = readFileSync(join(__dirname, '..', 'manifest.json'), 'utf-8');
+const example = readFileSync(join(__dirname, '..', 'example.md'), 'utf-8');
+
+const args = process.argv.slice(2);
+
+if (args.includes('--manifest')) {
+  process.stdout.write(manifest);
+  process.exit(0);
+}
+
+if (args.includes('--example')) {
+  process.stdout.write(example);
+  process.exit(0);
+}
+
+// 从 stdin 读取 Markdown
+const chunks: Buffer[] = [];
+for await (const chunk of stdin) {
+  chunks.push(chunk);
+}
+const input = Buffer.concat(chunks).toString('utf-8');
+
+// TODO: 实现 Markdown → Typst 转换逻辑
+// 请阅读 CONVENTIONS.md 了解详细的开发流程
+const output = convert(input);
+process.stdout.write(output);
+
+function convert(markdown: string): string {
+  const lines: string[] = [];
+
+  lines.push('#set page(paper: "a4")');
+  lines.push('#set text(font: ("SimSun", "Times New Roman"), size: 12pt, lang: "zh")');
+  lines.push('#set par(leading: 1.5em, first-line-indent: 2em)');
+  lines.push('');
+
+  // 占位实现：简单地将 Markdown 内容映射为 Typst
+  for (const line of markdown.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+      lines.push('');
+      continue;
+    }
+    if (trimmed.startsWith('---')) continue;
+    if (trimmed.startsWith('# ')) {
+      lines.push(`#heading(level: 1)[${trimmed.slice(2)}]`);
+    } else if (trimmed.startsWith('## ')) {
+      lines.push(`#heading(level: 2)[${trimmed.slice(3)}]`);
+    } else if (trimmed.startsWith('### ')) {
+      lines.push(`#heading(level: 3)[${trimmed.slice(4)}]`);
+    } else {
+      lines.push(trimmed);
+    }
+  }
+
+  return lines.join('\n');
+}
