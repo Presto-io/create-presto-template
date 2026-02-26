@@ -4,8 +4,16 @@
   "description": "{{description}}",
   "type": "module",
   "scripts": {
-    "build": "bun build --compile src/index.ts --outfile presto-template-{{name}}",
-    "start": "bun run src/index.ts"
+    "build": "make build",
+    "test": "make test"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "marked": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/bun": "latest"
   },
   "author": "{{author}}",
   "license": "{{license}}"

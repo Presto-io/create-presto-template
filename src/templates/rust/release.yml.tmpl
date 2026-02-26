@@ -1,4 +1,5 @@
 name: Release
+
 on:
   push:
     tags: ['v*']
@@ -7,49 +8,89 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     strategy:
       matrix:
         include:
           - target: x86_64-apple-darwin
             os: macos-latest
-            artifact: presto-template-{{name}}-darwin-amd64
+            artifact_suffix: darwin-amd64
           - target: aarch64-apple-darwin
             os: macos-latest
-            artifact: presto-template-{{name}}-darwin-arm64
+            artifact_suffix: darwin-arm64
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact: presto-template-{{name}}-linux-amd64
+            artifact_suffix: linux-amd64
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact: presto-template-{{name}}-linux-arm64
+            artifact_suffix: linux-arm64
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            artifact: presto-template-{{name}}-windows-amd64.exe
+            artifact_suffix: windows-amd64.exe
           - target: aarch64-pc-windows-msvc
             os: windows-latest
-            artifact: presto-template-{{name}}-windows-arm64.exe
+            artifact_suffix: windows-arm64.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - name: Install cross
-        if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64')
-        run: cargo install cross
-      - name: Build (native)
-        if: "!(matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64'))"
-        run: |
-          rustup target add ${{ matrix.target }}
-          cargo build --release --target ${{ matrix.target }}
-          cp target/${{ matrix.target }}/release/presto-template-{{name}}* ${{ matrix.artifact }}
+
+      - name: Install cross (for cross-compilation)
+        if: matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'aarch64-pc-windows-msvc'
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Read template name from manifest
+        id: meta
+        shell: bash
+        run: echo "name=$(python3 -c "import json; print(json.load(open('manifest.json'))['name'])")" >> "$GITHUB_OUTPUT"
+
       - name: Build (cross)
-        if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64')
+        if: matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'aarch64-pc-windows-msvc'
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build (native)
+        if: matrix.target != 'aarch64-unknown-linux-gnu' && matrix.target != 'aarch64-pc-windows-msvc'
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename artifact (unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          cross build --release --target ${{ matrix.target }}
-          cp target/${{ matrix.target }}/release/presto-template-{{name}} ${{ matrix.artifact }}
-      - name: Upload
+          cp target/${{ matrix.target }}/release/presto-template-${{ steps.meta.outputs.name }} \
+             presto-template-${{ steps.meta.outputs.name }}-${{ matrix.artifact_suffix }}
+
+      - name: Rename artifact (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cp target/${{ matrix.target }}/release/presto-template-${{ steps.meta.outputs.name }}.exe \
+             presto-template-${{ steps.meta.outputs.name }}-${{ matrix.artifact_suffix }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.artifact_suffix }}
+          path: presto-template-*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        run: sha256sum presto-template-* > SHA256SUMS
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact }}
+          files: |
+            presto-template-*
+            SHA256SUMS
+          generate_release_notes: true
