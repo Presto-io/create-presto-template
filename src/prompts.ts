@@ -43,18 +43,14 @@ export async function askQuestions(): Promise<Answers> {
     ],
   });
 
-  const category = await select({
-    message: '分类',
-    choices: [
-      { value: 'government', name: '政务 (government)' },
-      { value: 'education', name: '教育 (education)' },
-      { value: 'business', name: '商务 (business)' },
-      { value: 'academic', name: '学术 (academic)' },
-      { value: 'legal', name: '法务 (legal)' },
-      { value: 'resume', name: '简历 (resume)' },
-      { value: 'creative', name: '创意 (creative)' },
-      { value: 'other', name: '其他 (other)' },
-    ],
+  const category = await input({
+    message: '分类 (如：政务、教育、商务)',
+    validate: (v) => {
+      if (!v) return '分类不能为空';
+      if (v.length > 20) return '分类不超过 20 个字符';
+      if (!/^[\u4e00-\u9fff\w\s-]+$/.test(v)) return '只允许中英文、数字、空格和连字符';
+      return true;
+    },
   });
 
   const author = await input({
