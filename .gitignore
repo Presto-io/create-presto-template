@@ -9,3 +9,6 @@
 
 # 测试生成的目录
 /test-output/
+
+# Claude Code
+.claude/
