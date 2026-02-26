@@ -35,6 +35,18 @@ git push origin main --tags
 
 CI 会自动编译 6 平台二进制并创建 GitHub Release。
 
+## 获取 Verified 标识
+
+你的模板发布后默认为 community 等级（需用户开启"社区模板"开关才可见）。
+如果希望获得 verified 标识（默认在商店可见），template-registry 的 CI 会自动检测你的新版本并创建 PR。
+维护者审批后，CI 会从你的源码编译二进制并发布，确保二进制安全可信。
+
+无需额外操作，只需确保：
+
+- 仓库有 `presto-template` topic
+- 使用 tag 发布 Release（如 `v1.0.0`）
+- 源码可以通过 `make build` 正常编译
+
 ## 开发
 
 1. 将参考文件（PDF、DOCX 等）放入 `reference/` 目录
