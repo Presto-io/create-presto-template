@@ -67,16 +67,22 @@ export async function generate(answers: Answers): Promise<string> {
     const rendered = replaceVariables(content, vars);
     const relativePath = path.relative(langDir, file).replace(/\.tmpl$/, '');
 
-    // release.yml 放到 .github/workflows/
+    // 特殊路径映射
     let destPath: string;
     if (relativePath === 'release.yml') {
       destPath = path.join(targetDir, '.github', 'workflows', 'release.yml');
+    } else if (relativePath === 'claude-settings.json') {
+      destPath = path.join(targetDir, '.claude', 'settings.local.json');
     } else {
       destPath = path.join(targetDir, relativePath);
     }
 
+    // go.sum 不做变量替换（内含校验哈希）
+    const isRawLangFile = relativePath === 'go.sum';
+    const finalContent = isRawLangFile ? content : rendered;
+
     await fs.mkdir(path.dirname(destPath), { recursive: true });
-    await fs.writeFile(destPath, rendered);
+    await fs.writeFile(destPath, finalContent);
   }
 
   // 3. 复制共享文件
