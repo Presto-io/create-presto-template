@@ -91,6 +91,7 @@ export async function generate(answers: Answers): Promise<string> {
 
   for (const file of sharedFiles) {
     const fileName = path.basename(file);
+    const relativePath = path.relative(sharedDir, file);
     const content = await fs.readFile(file, 'utf-8');
 
     // CONVENTIONS.md 直接复制，不做变量替换
@@ -105,7 +106,7 @@ export async function generate(answers: Answers): Promise<string> {
     } else if (fileName === 'cursor-rules.tmpl') {
       destPath = path.join(targetDir, '.cursor', 'rules');
     } else {
-      destPath = path.join(targetDir, fileName.replace(/\.tmpl$/, ''));
+      destPath = path.join(targetDir, relativePath.replace(/\.tmpl$/, ''));
     }
 
     await fs.mkdir(path.dirname(destPath), { recursive: true });
