@@ -6,6 +6,7 @@ import type { Answers } from './prompts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PRESTO_VERSION = '0.1.0';
+const VALID_LANGUAGES = new Set(['go', 'rust', 'typescript']);
 
 interface TemplateVars {
   name: string;
@@ -51,8 +52,13 @@ async function getTemplateFiles(dir: string): Promise<string[]> {
 }
 
 export async function generate(answers: Answers): Promise<string> {
+  validateAnswers(answers);
   const vars = buildVars(answers);
-  const targetDir = path.join(process.cwd(), answers.name);
+  const cwd = path.resolve(process.cwd());
+  const targetDir = path.resolve(cwd, answers.name);
+  if (!targetDir.startsWith(cwd + path.sep)) {
+    throw new Error('模板名称不能指向当前目录之外');
+  }
   const templatesDir = path.join(__dirname, 'templates');
 
   // 1. 创建目标目录
@@ -142,4 +148,13 @@ export async function generate(answers: Answers): Promise<string> {
   });
 
   return targetDir;
+}
+
+function validateAnswers(answers: Answers): void {
+  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(answers.name)) {
+    throw new Error('模板名称只允许小写字母、数字和连字符，不能以连字符开头或结尾');
+  }
+  if (!VALID_LANGUAGES.has(answers.language)) {
+    throw new Error(`不支持的模板语言: ${answers.language}`);
+  }
 }
