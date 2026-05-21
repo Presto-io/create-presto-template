@@ -47,6 +47,9 @@ my-template/
 
 **关键约束：**
 
+- 默认转换模式的 stdout 必须是非空 Typst 源码；空字符串或纯空白视为转换失败
+- 转换失败必须向 stderr 写入错误信息，并以非 0 状态退出
+- 不允许吞掉异常后返回空 Typst，因为 Presto 会把退出码为 0 的 stdout 继续交给 Typst 编译
 - manifest.json 和 example.md 必须嵌入在二进制内部（编译时内嵌）
 - 执行环境最小化：只有 `PATH=/usr/local/bin:/usr/bin:/bin`，无其他环境变量
 - 超时限制：30 秒

@@ -4,6 +4,8 @@
 
 一个 [Presto](https://presto.app) 模板项目，将 Markdown 转换为 Typst 排版源码。
 
+模板协议要求默认模式从 stdin 读取 Markdown，并向 stdout 输出非空 Typst。转换失败或生成空白 Typst 必须写 stderr 并以非 0 状态退出；不要吞掉异常后返回空输出。
+
 ## 快速开始
 
 ### 构建
